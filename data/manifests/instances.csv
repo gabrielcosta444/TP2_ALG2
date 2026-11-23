@@ -1,0 +1,13 @@
+filename,name,dimension,edge_weight_type,optimal_cost,source_url,sha256
+eil51_n10.tsp,eil51_n10,10,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,441a10e657e9ba4dfab00e996c1b56b1d26790996962017f59f239a6c98260ee
+eil51_n12.tsp,eil51_n12,12,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,8d98d0947f283ee418c7db08ca6f59b83da9484676907d85b33017ce9c405924
+eil51_n15.tsp,eil51_n15,15,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,d17d27d85a109f0d1628f51ef4483743c82facb1dc76909d64585fbf258beb72
+eil51_n18.tsp,eil51_n18,18,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,c1c42674d2829c3df916039aa8c03cb653ccc244e3f77d93357daca6ffc65114
+eil51_n20.tsp,eil51_n20,20,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,19edb6da18d02496f570c98db3a5dbacec1e4d0769d201b9c669408e25da622c
+eil51_n25.tsp,eil51_n25,25,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,9d74a23f4198c470950b420d49baf387b8690cea799c4a6280c9412068c4a5de
+eil51_n28.tsp,eil51_n28,28,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,7ea27b9153ab8d3b831b46c2bcb54860387e9f47d7cd8e08c3792e23f1ad451e
+eil51_n30.tsp,eil51_n30,30,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,c77b122415e0ba6bb466c54db8d5bb864a4c7fe7fc1b221ac2bae95610761326
+eil51_n35.tsp,eil51_n35,35,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,ea0eb98fd22c972edc635b7638349069a860ab88e42a985e7ab3f793a4ebae3d
+eil51_n40.tsp,eil51_n40,40,EUC_2D,NA,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/eil51.tsp.gz,f4a9977b2a58dbab5a6701e75ce373d072c138aef130857b419bbf384aa967c2
+berlin52.tsp,berlin52,52,EUC_2D,7542,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/berlin52.tsp.gz,8496a5838133e3c3eb25a9fa8893b1ac302593fc8dc325350643a0cabd8abadc
+st70.tsp,st70,70,EUC_2D,675,https://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/st70.tsp.gz,60c09e8886609bf22d6dc699fe7d7aa1924207d084578aad1a377ec65cf15b1b

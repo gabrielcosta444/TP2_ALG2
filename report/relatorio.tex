@@ -1,0 +1,403 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{amsmath,booktabs}
+\usepackage{float}
+\setlength{\emergencystretch}{1.5em}
+
+\title{Auditoria Empírica de Algoritmos Exatos e Aproximados para o Caixeiro Viajante Euclidiano}
+
+\author{Gabriel da Cunha Costa}
+
+\address{Departamento de Ciência da Computação -- Universidade Federal de Minas Gerais\\
+  DCC207 -- Algoritmos 2}
+
+\begin{document}
+
+\maketitle
+
+\begin{resumo}
+Este trabalho avalia um solucionador exato baseado em Branch-and-Bound e os algoritmos aproximativos Twice-around-the-tree e Christofides para instâncias simétricas e euclidianas do Problema do Caixeiro Viajante. Foram utilizadas 12 instâncias, resultando em 84 execuções, com limite de 30 minutos por execução. Para o algoritmo exato, foram avaliadas cinco estratégias diferentes de construção da solução inicial. O Branch-and-Bound certificou a solução ótima de sete instâncias, enquanto 25 execuções atingiram o limite de tempo. Nas sete instâncias certificadas, os gaps médios foram de 32,43\% para o Twice-around-the-tree e 8,30\% para o Christofides. Também foram analisados o comportamento temporal, o consumo de memória, a eficiência das podas e a influência de características geométricas das instâncias. O modelo exploratório baseado nessas características não apresentou capacidade de generalização fora da amostra, limitando as conclusões da análise de sensibilidade.
+\end{resumo}
+
+\begin{abstract}
+This work evaluates an exact Branch-and-Bound solver and the Twice-around-the-tree and Christofides approximation algorithms for symmetric Euclidean instances of the Traveling Salesperson Problem. Twelve instances were evaluated, resulting in 84 executions with a 30-minute time limit per execution. Five different initial-solution strategies were considered for the exact algorithm. The Branch-and-Bound solver certified the optimal solution for seven instances, while 25 executions reached the time limit. For the seven certified instances, the mean approximation gaps were 32.43\% for Twice-around-the-tree and 8.30\% for Christofides. Runtime behavior, memory consumption, pruning efficiency, and the influence of geometric instance characteristics were also evaluated. The exploratory model based on these characteristics failed to generalize outside the sample, limiting the conclusions of the sensitivity analysis.
+\end{abstract}
+
+\section{Introdução}
+
+O Problema do Caixeiro Viajante (TSP) consiste em encontrar um ciclo Hamiltoniano de custo mínimo em um conjunto de cidades. Em outras palavras, deseja-se encontrar uma rota que visite cada cidade exatamente uma vez e retorne à cidade inicial, minimizando a soma das distâncias percorridas.
+
+A dificuldade combinatória do problema motiva a comparação entre algoritmos exatos e aproximativos. Um algoritmo exato procura uma solução ótima e, para certificá-la, precisa explorar ou eliminar por poda as demais possibilidades. Já os algoritmos aproximativos produzem rapidamente soluções viáveis, mas não necessariamente ótimas.
+
+Este trabalho compara um algoritmo exato baseado em Branch-and-Bound com os algoritmos aproximativos Twice-around-the-tree e Christofides. Além da qualidade das soluções, são avaliados o tempo de execução, o consumo de memória, o número de nós explorados e a eficiência das podas realizadas durante a busca.
+
+No Branch-and-Bound, foram avaliadas cinco estratégias de construção de solução inicial: ciclo trivial, vizinho mais próximo com múltiplos pontos iniciais, inserção a partir do fecho convexo, Twice-around-the-tree e Christofides. O objetivo dessa comparação é investigar como a qualidade da solução inicial influencia a quantidade de estados que precisam ser explorados pelo algoritmo exato.
+
+As instâncias utilizadas incluem \texttt{berlin52} e \texttt{st70}, além de dez subinstâncias derivadas das coordenadas da instância \texttt{eil51}. Todas as distâncias são calculadas segundo o formato inteiro \texttt{EUC\_2D} utilizado pela TSPLIB~\cite{tsplib}. As instâncias derivadas são identificadas explicitamente e não são tratadas como amostras independentes de famílias diferentes.
+
+\section{Implementação, profiling e auditoria}
+
+\subsection{Estruturas de dados e algoritmos}
+
+As distâncias entre os vértices são armazenadas em uma matriz densa de inteiros. Como a matriz é simétrica, a distância entre os vértices $i$ e $j$ é igual à distância entre $j$ e $i$.
+
+A utilização da matriz permite consultar qualquer distância em tempo constante $O(1)$, ao custo de $O(n^2)$ de memória. Considerando o limite de tamanho das instâncias do trabalho, essa escolha simplifica a implementação e evita o recálculo de distâncias durante os algoritmos.
+
+As coordenadas e a matriz de distâncias são armazenadas em estruturas somente de leitura durante a execução dos algoritmos. Os ciclos são representados por sequências de índices de vértices sem repetir o vértice inicial no final. A aresta de retorno ao início é adicionada apenas durante o cálculo do custo total.
+
+A árvore geradora mínima é construída utilizando o algoritmo de Prim sobre a matriz densa. A implementação possui complexidade $O(n^2)$, sendo suficiente para as dimensões avaliadas. Em situações de empate, o índice do vértice é utilizado para garantir resultados determinísticos.
+
+Para representar o multigrafo utilizado pelos algoritmos aproximativos, cada aresta recebe um identificador próprio. Isso permite preservar corretamente arestas paralelas, principalmente quando uma mesma aresta aparece na árvore geradora mínima e no emparelhamento do algoritmo de Christofides.
+
+\subsubsection{Twice-around-the-tree}
+
+O Twice-around-the-tree começa construindo uma árvore geradora mínima. Em seguida, realiza uma busca em profundidade em pré-ordem sobre essa árvore. A ordem de primeira visita dos vértices é utilizada para formar o ciclo final.
+
+Essa operação equivale à duplicação das arestas da árvore e à posterior remoção de visitas repetidas por \emph{shortcutting}. Como as instâncias são métricas, o algoritmo produz um ciclo cujo custo é limitado em relação à solução ótima.
+
+\subsubsection{Christofides}
+
+O algoritmo de Christofides também começa pela construção de uma árvore geradora mínima. Em seguida, identifica os vértices de grau ímpar nessa árvore e constrói o grafo completo induzido por esses vértices.
+
+O emparelhamento perfeito de custo mínimo foi obtido utilizando a implementação disponibilizada pela biblioteca NetworkX. Essa é a principal operação algorítmica delegada a uma biblioteca externa.
+
+A união entre a árvore geradora mínima e as arestas do emparelhamento produz um multigrafo Euleriano. Um circuito Euleriano é então construído pelo algoritmo de Hierholzer. Por fim, os vértices repetidos são removidos por \emph{shortcutting} para formar o ciclo Hamiltoniano~\cite{christofides}.
+
+Como as distâncias \texttt{EUC\_2D} são individualmente arredondadas para valores inteiros, as garantias teóricas normalmente associadas a métricas contínuas não devem ser aplicadas sem considerar a matriz de distâncias efetivamente utilizada.
+
+\subsubsection{Branch-and-Bound}
+
+O algoritmo Branch-and-Bound fixa o vértice zero como cidade inicial, evitando explorar ciclos equivalentes que diferem apenas por rotação.
+
+Os vértices ainda não visitados são armazenados em uma máscara de bits. Essa representação permite testar, adicionar e remover vértices com baixo custo computacional.
+
+A árvore de busca é percorrida em profundidade. Essa estratégia mantém apenas o caminho atual e as informações necessárias para retroceder na busca. Uma estratégia \emph{best-first} poderia selecionar primeiro o estado com menor limite inferior, mas exigiria armazenar uma fronteira potencialmente muito maior.
+
+Os próximos vértices são avaliados em ordem crescente de custo a partir do vértice atual. Essa ordenação aumenta a possibilidade de encontrar boas soluções no início da busca, permitindo que o limite superior seja reduzido mais rapidamente.
+
+Para um caminho parcial terminado no vértice $v$ e um conjunto $U$ de vértices ainda não visitados, o limite inferior utilizado é:
+\begin{equation}
+ L = c_{\mathrm{parcial}} + \operatorname{MST}(U)
+     + \min_{u\in U} d(v,u) + \min_{u\in U} d(0,u).
+\end{equation}
+
+O termo $\operatorname{MST}(U)$ representa o custo da árvore geradora mínima dos vértices ainda não visitados. Os dois últimos termos representam, respectivamente, uma conexão entre o final do caminho atual e os vértices restantes e uma conexão entre os vértices restantes e o ponto inicial.
+
+Um cache limitado a 4096 máscaras evita recalcular algumas árvores geradoras mínimas. O limite de tamanho do cache foi adotado para impedir crescimento excessivo do consumo de memória.
+
+Também foi utilizada uma tabela de dominância baseada no estado formado pelo vértice atual e pelo conjunto de vértices ainda não visitados. Quando o mesmo estado é alcançado novamente com custo parcial maior ou igual ao melhor custo já registrado, esse novo estado pode ser descartado.
+
+Além da poda por limite inferior e da poda por dominância, foi aplicada uma regra de simetria para eliminar ciclos que correspondem apenas à inversão de outro ciclo já considerado.
+
+\subsubsection{Soluções iniciais}
+
+Foram avaliadas cinco estratégias de construção de solução inicial para o Branch-and-Bound:
+\begin{itemize}
+  \item ciclo trivial, seguindo a ordem original dos vértices;
+  \item vizinho mais próximo, testando múltiplos vértices iniciais;
+  \item inserção mais barata a partir dos vértices do fecho convexo;
+  \item Twice-around-the-tree;
+  \item Christofides.
+\end{itemize}
+
+O tempo utilizado para construir cada solução inicial foi medido separadamente do tempo da busca exata. Uma execução classificada como \texttt{optimal} significa que a árvore de busca foi completamente processada ou podada e que o incumbente foi certificado como ótimo. Uma execução classificada como \texttt{timeout} não possui esse certificado.
+
+\subsection{Instrumentação e profiling}
+
+A instrumentação registra o tempo de execução e o pico de alocações Python por meio do módulo \texttt{tracemalloc}. Também foram incluídas medições específicas para as principais fases dos algoritmos.
+
+No Twice-around-the-tree, são medidos separadamente o tempo de construção da árvore geradora mínima e o tempo de construção da rota.
+
+No Christofides, são registrados os tempos da árvore geradora mínima, do emparelhamento, da construção do circuito Euleriano e do \emph{shortcutting}.
+
+No Branch-and-Bound, são medidos o tempo de construção da solução inicial, o tempo da busca e diferentes contadores, como número de nós gerados, nós expandidos e podas realizadas.
+
+O campo \texttt{peak\_memory\_bytes} representa o pico de alocações Python observado durante a chamada do algoritmo. Portanto, ele não corresponde necessariamente ao pico de memória residente de todo o processo e não inclui integralmente buffers nativos utilizados por bibliotecas como NumPy e NetworkX.
+
+A mediana do tempo da fase de emparelhamento do Christofides foi de aproximadamente 6,37 milissegundos nas 12 instâncias. Entretanto, essa medição isolada não é suficiente para concluir que o emparelhamento foi sempre a etapa mais cara, pois parte do tempo total corresponde a operações que não foram atribuídas individualmente a uma fase.
+
+\subsection{Auditoria e testes}
+
+A auditoria do código incluiu testes para soma de pesos, coordenadas grandes, pontos coincidentes, arestas paralelas e preservação de sessões externas do \texttt{tracemalloc}.
+
+Os custos dos ciclos são acumulados utilizando inteiros Python, evitando o risco de \emph{overflow} que poderia ocorrer em acumuladores de tamanho fixo do NumPy.
+
+Também foram tratados casos degenerados do fecho convexo, incluindo conjuntos com poucos pontos, pontos repetidos e pontos colineares.
+
+Foram criados testes para o \emph{parser} das instâncias, para o cálculo de distâncias \texttt{EUC\_2D}, para a matriz de distâncias, para a árvore geradora mínima, para os algoritmos aproximativos e para o Branch-and-Bound.
+
+Ferramentas de IA generativa foram utilizadas como apoio ao desenvolvimento e à revisão, incluindo a discussão de alternativas de implementação, a estruturação das partições utilizadas na campanha de experimentos e a elaboração de casos de teste. As decisões técnicas e a interpretação dos resultados foram verificadas por meio do código, dos testes e dos dados produzidos.
+
+\section{Experimentos e resultados}
+
+\subsection{Protocolo experimental}
+
+O conjunto de testes contém 12 instâncias. Dez delas possuem dimensões entre 10 e 40 vértices. As instâncias \texttt{berlin52} e \texttt{st70} foram utilizadas como casos de maior dimensão.
+
+Cada instância foi executada com os dois algoritmos aproximativos e com o Branch-and-Bound utilizando cinco estratégias de solução inicial. Portanto, foram realizadas:
+\begin{equation}
+ 12 \times 7 = 84 \text{ combinações experimentais}.
+\end{equation}
+
+As execuções foram divididas em quatro partições disjuntas. Cada partição foi processada por um coordenador independente e cada experimento foi executado em um processo filho. Essa estrutura permitiu utilizar os quatro núcleos físicos disponíveis sem misturar os dados de uma execução com outra.
+
+Os resultados de cada experimento foram gravados em CSV imediatamente após o término. Posteriormente, os quatro arquivos parciais foram unidos, verificando a existência de chaves duplicadas.
+
+O limite de tempo de cada combinação experimental foi de 1800 segundos, equivalentes a 30 minutos.
+
+O arquivo consolidado possui 84 combinações únicas, distribuídas da seguinte forma:
+\begin{itemize}
+  \item 24 soluções viáveis produzidas pelos algoritmos aproximativos;
+  \item 35 execuções do Branch-and-Bound finalizadas com certificado de ótimo;
+  \item 25 execuções do Branch-and-Bound encerradas pelo limite de tempo.
+\end{itemize}
+
+O processo coordenador encerrou externamente os 25 processos filhos que atingiram o limite. Essas linhas preservam a identificação da instância e suas características geométricas, mas possuem valores ausentes para custo, tempo preciso, memória e contadores parciais.
+
+Essa limitação impede estimar a quantidade de podas ou a qualidade do incumbente encontrado nos casos que atingiram o tempo máximo.
+
+As cinco estratégias de solução inicial certificaram o mesmo custo ótimo para as instâncias com 10, 12, 15, 18, 20, 25 e 28 vértices.
+
+As instâncias com 30, 35, 40, 52 e 70 vértices atingiram o limite de tempo nas cinco estratégias de solução inicial.
+
+\begin{table}[ht]
+\centering
+\caption{Custos obtidos nas instâncias certificadas pelo Branch-and-Bound.}
+\label{tab:costs}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Número de vértices & 10 & 12 & 15 & 18 & 20 & 25 & 28 \\
+\midrule
+Ótimo & 193 & 220 & 206 & 210 & 240 & 279 & 294 \\
+Twice-around & 252 & 302 & 275 & 234 & 319 & 391 & 415 \\
+Christofides & 193 & 247 & 215 & 241 & 248 & 311 & 329 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Modelagem do tempo de execução}
+
+Para os algoritmos aproximativos, foi ajustado um modelo quadrático da forma:
+\begin{equation}
+ t(n) = a + bn^2.
+\end{equation}
+
+O ajuste foi realizado utilizando os tempos totais das 12 instâncias.
+
+Para o Twice-around-the-tree, o modelo apresentou $R^2$ igual a 0,037 e RMSE igual a 0,00681 segundo.
+
+Para o Christofides, o modelo apresentou $R^2$ igual a 0,142 e RMSE igual a 0,01258 segundo.
+
+O coeficiente associado a $n^2$ no modelo do Twice-around-the-tree foi negativo, o que não possui uma interpretação válida como crescimento assintótico. Isso demonstra que o modelo teve baixo poder explicativo para os tempos observados.
+
+As medianas dos tempos totais foram de aproximadamente 0,0503 segundo para o Twice-around-the-tree e 0,0719 segundo para o Christofides.
+
+Como as instâncias são pequenas, o \emph{overhead} do executor, do \emph{profiling} e do processo Python representa uma parcela relevante do tempo total. Por isso, os dados não são suficientes para confirmar empiricamente o comportamento assintótico teórico dos algoritmos.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/01_tempo_aproximacoes.pdf}
+\caption{Tempo total dos algoritmos Twice-around-the-tree e Christofides em função do número de vértices, com os pontos observados, as curvas quadráticas ajustadas, $R^2$ e RMSE.}
+\label{fig:approx-time}
+\end{figure}
+
+Para o Branch-and-Bound, foi ajustado um modelo exploratório sobre o logaritmo do tempo mediano das cinco estratégias de solução inicial:
+\begin{equation}
+ \log(t) = -7{,}992 + 0{,}524n.
+\end{equation}
+
+O modelo apresentou $R^2$ igual a 0,883 e RMSE igual a 1,167 em unidades de log-segundo.
+
+Somente as sete instâncias certificadas foram utilizadas no ajuste. As cinco instâncias que atingiram o limite de tempo foram tratadas como observações censuradas e não foram incluídas na regressão.
+
+Os tempos medianos do Branch-and-Bound não foram monotônicos. A instância com 18 vértices levou aproximadamente 6,71 segundos, enquanto a instância com 20 vértices levou aproximadamente 1,31 segundo. A instância com 25 vértices levou aproximadamente 1168 segundos, enquanto a instância com 28 vértices levou aproximadamente 401 segundos.
+
+Esses resultados demonstram que a dificuldade da busca não é determinada somente pelo número de vértices. A geometria da instância, a qualidade da solução inicial e a capacidade do limite inferior de podar estados também exercem influência importante.
+
+O ajuste encontrado não deve ser interpretado como prova de uma taxa exponencial universal, nem deve ser utilizado para extrapolar de maneira confiável o comportamento do algoritmo para instâncias maiores que as observadas.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/02_tempo_branch_and_bound.pdf}
+\caption{Tempo mediano do Branch-and-Bound em escala logarítmica, com as sete instâncias certificadas e as cinco dimensões censuradas pelo limite externo de 1800 segundos.}
+\label{fig:exact-time}
+\end{figure}
+
+\subsection{Modelagem do consumo de memória}
+
+Para o pico de alocações Python dos algoritmos aproximativos, também foram ajustados modelos quadráticos da forma:
+\begin{equation}
+ m(n) = a + bn^2.
+\end{equation}
+
+Para o Twice-around-the-tree, foram obtidos $a=2527$ bytes, $b=1{,}605$ bytes, $R^2=0{,}760$ e RMSE de 1202 bytes.
+
+Para o Christofides, foram obtidos $a=60711$ bytes, $b=53{,}040$ bytes, $R^2=0{,}985$ e RMSE de 8849 bytes.
+
+Esses modelos representam apenas o pico de alocações rastreadas pelo Python. Eles não correspondem à memória residente total do processo.
+
+O intercepto elevado do Christofides inclui custos fixos relacionados à biblioteca de grafos e à preparação das estruturas utilizadas pelo emparelhamento.
+
+No caso do Branch-and-Bound, as 25 execuções censuradas não possuem medição de memória. Por isso, os dados disponíveis não permitem construir uma curva representativa do consumo de memória no regime de maior dificuldade.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/03_memoria.pdf}
+\caption{Pico de alocações Python em função do número de vértices para Twice-around-the-tree, Christofides e Branch-and-Bound, com as curvas quadráticas das aproximações e a indicação dos valores ausentes.}
+\label{fig:memory}
+\end{figure}
+
+\subsection{Influência das soluções iniciais e eficiência das podas}
+
+Nas sete instâncias certificadas, a mediana do número de nós expandidos para cada solução inicial foi:
+\begin{itemize}
+  \item ciclo trivial: 35.281 nós;
+  \item vizinho mais próximo: 2.942 nós;
+  \item inserção pelo fecho convexo: 2.818 nós;
+  \item Twice-around-the-tree: 26.847 nós;
+  \item Christofides: 4.666 nós.
+\end{itemize}
+
+As medianas do número de nós podados pelo limite inferior foram:
+\begin{itemize}
+  \item ciclo trivial: 19.536 nós;
+  \item vizinho mais próximo: 2.106 nós;
+  \item inserção pelo fecho convexo: 2.020 nós;
+  \item Twice-around-the-tree: 15.793 nós;
+  \item Christofides: 3.175 nós.
+\end{itemize}
+
+Uma quantidade absoluta menor de nós podados não significa necessariamente que uma estratégia realizou uma poda menos eficiente. Uma solução inicial mais forte pode reduzir toda a árvore de busca, fazendo com que tanto a quantidade de nós expandidos quanto a quantidade absoluta de podas seja menor.
+
+Também foram observadas podas por dominância e pela regra de simetria.
+
+As medianas dos tempos de construção das soluções iniciais foram:
+\begin{itemize}
+  \item ciclo trivial: 0,052 milissegundo;
+  \item vizinho mais próximo: 2,99 milissegundos;
+  \item inserção pelo fecho convexo: 3,55 milissegundos;
+  \item Twice-around-the-tree: 0,441 milissegundo;
+  \item Christofides: 4,60 milissegundos.
+\end{itemize}
+
+As medianas dos tempos posteriores de busca foram:
+\begin{itemize}
+  \item ciclo trivial: 6,48 segundos;
+  \item vizinho mais próximo: 0,779 segundo;
+  \item inserção pelo fecho convexo: 0,951 segundo;
+  \item Twice-around-the-tree: 6,71 segundos;
+  \item Christofides: 1,31 segundo.
+\end{itemize}
+
+Nas instâncias concluídas, o custo de construção da solução inicial foi pequeno em comparação com o tempo economizado durante a busca.
+
+Entretanto, essas medianas agregadas não garantem a mesma ordem de desempenho em todas as instâncias. Além disso, como as execuções que atingiram o limite não registraram contadores parciais, não é possível concluir que uma estratégia dominou as demais nos cinco casos mais difíceis.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/04_warm_starts.pdf}
+\caption{Número de nós expandidos e podados por instância e por estratégia de solução inicial, considerando apenas as sete instâncias certificadas, e custo mediano de construção de cada solução inicial.}
+\label{fig:warm-starts}
+\end{figure}
+
+\subsection{Qualidade das soluções aproximativas}
+
+Para as sete instâncias com ótimo certificado, o gap percentual foi calculado por:
+\begin{equation}
+ \operatorname{gap} = 100\left(\frac{c_{\mathrm{aproximado}}}{c^*}-1\right).
+\end{equation}
+
+Para o Twice-around-the-tree, foram obtidos gap médio de 32,43\%, gap mediano de 33,50\% e gap máximo de 41,16\%.
+
+Para o Christofides, foram obtidos gap médio de 8,30\%, gap mediano de 11,47\% e gap máximo de 14,76\%.
+
+Essas médias foram calculadas sobre as sete instâncias certificadas e não sobre as 35 execuções do Branch-and-Bound.
+
+Os custos aproximativos das cinco instâncias sem certificado não foram utilizados para calcular gaps, pois não existe uma solução ótima certificada disponível para essas instâncias derivadas.
+
+Nas instâncias comparáveis, o Christofides produziu soluções mais próximas do ótimo do que o Twice-around-the-tree. Em contrapartida, apresentou maior tempo de execução e maior consumo de memória.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/05_gaps.pdf}
+\caption{Gap percentual das soluções produzidas por Twice-around-the-tree e Christofides, com destaque para as sete instâncias com ótimo certificado e indicação dos cinco casos em que o gap está indisponível. Círculos verdes indicam certificado disponível e marcas cinzas indicam gap indisponível.}
+\label{fig:gaps}
+\end{figure}
+
+\subsection{Análise de sensibilidade geométrica}
+
+Foram consideradas três características geométricas das instâncias:
+\begin{itemize}
+  \item fração dos pontos pertencentes ao fecho convexo;
+  \item entropia espacial calculada em uma grade $4\times4$;
+  \item coeficiente de variação da distância ao vizinho mais próximo.
+\end{itemize}
+
+Foi ajustada uma regressão Ridge com penalidade $\alpha=1$. As características foram padronizadas dentro de cada divisão de validação.
+
+Como existiam apenas sete instâncias com ótimo certificado, foi utilizada validação deixando uma instância de fora por vez. Em cada etapa, seis instâncias foram utilizadas para treinamento e a instância restante foi utilizada para teste.
+
+A variável-alvo foi o gap percentual produzido pelo algoritmo aproximativo.
+
+Para o Twice-around-the-tree, o modelo apresentou $R^2$ fora da amostra igual a $-0{,}357$ e erro absoluto médio de 8,60 pontos percentuais.
+
+Para o Christofides, o modelo apresentou $R^2$ fora da amostra igual a $-0{,}699$ e erro absoluto médio de 5,68 pontos percentuais.
+
+Os valores negativos de $R^2$ indicam que os modelos apresentaram desempenho preditivo inferior ao referencial constante baseado na média global observada.
+
+Consequentemente, não existe evidência suficiente para afirmar que a fração do fecho convexo, a dispersão espacial ou a heterogeneidade das distâncias locais determinaram os gaps observados.
+
+Os coeficientes obtidos podem ser utilizados apenas como descrição exploratória desta amostra. Eles não devem ser interpretados como importância estável das características ou como relação causal.
+
+Além do pequeno número de observações, dez das instâncias são subinstâncias aninhadas derivadas da mesma fonte, o que reduz a independência efetiva do conjunto de dados.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/06_sensibilidade.pdf}
+\caption{Coeficientes padronizados da regressão Ridge para cada algoritmo aproximativo. Como ambos os modelos apresentaram $R^2$ negativo fora da amostra, os pesos possuem caráter apenas exploratório.}
+\label{fig:sensitivity}
+\end{figure}
+
+\section{Conclusões}
+
+O algoritmo de Christofides produziu soluções mais próximas do ótimo certificado do que o Twice-around-the-tree nas sete instâncias em que a comparação foi possível. O gap médio do Christofides foi de 8,30\%, enquanto o Twice-around-the-tree apresentou gap médio de 32,43\%.
+
+O Branch-and-Bound certificou a solução ótima das sete menores instâncias avaliadas e atingiu o limite externo de 30 minutos nas cinco maiores. Esses resultados demonstram o crescimento da dificuldade da busca exata e a influência da estrutura geométrica das instâncias.
+
+As estratégias de solução inicial vizinho mais próximo, inserção pelo fecho convexo e Christofides estiveram associadas a árvores de busca menores nos casos concluídos. O tempo utilizado para construir essas soluções foi pequeno em comparação com o tempo posterior da busca.
+
+Entretanto, os dados das execuções que atingiram o limite não preservam o custo do incumbente nem os contadores parciais. Assim, não é possível quantificar a eficiência das podas nos casos mais difíceis ou afirmar que uma estratégia de solução inicial dominou as demais em todo o conjunto experimental.
+
+Os modelos quadráticos ajustados aos tempos dos algoritmos aproximativos apresentaram baixo poder explicativo. Isso se deve principalmente ao pequeno tamanho das instâncias e à influência do \emph{overhead} de instrumentação.
+
+O modelo de tempo do Branch-and-Bound apresentou melhor ajuste, mas foi construído somente com as sete instâncias concluídas. Por isso, não deve ser interpretado como uma caracterização assintótica geral do algoritmo.
+
+A análise de sensibilidade baseada em características geométricas não apresentou capacidade de generalização fora da amostra. O pequeno número de instâncias certificadas e a dependência entre as subinstâncias derivadas de \texttt{eil51} limitam as conclusões.
+
+Como trabalhos futuros, seria importante preservar informações parciais dos processos encerrados por \emph{timeout}, utilizar instâncias provenientes de diferentes famílias e realizar múltiplas repetições temporais de cada experimento. Essas alterações permitiriam avaliar de maneira mais confiável o consumo de memória, o comportamento temporal, a eficiência das podas e a influência das características geométricas.
+
+\section*{Reprodutibilidade e material suplementar}
+
+As métricas brutas das 84 execuções estão armazenadas no arquivo \path{data/results/experiments.csv}. Os hashes, as origens e o tipo de distância das instâncias são apresentados no manifesto do conjunto de dados.
+
+Os arquivos parciais utilizados na campanha também foram preservados, permitindo verificar a divisão das execuções entre os quatro processos coordenadores.
+
+\begin{thebibliography}{9}
+
+\bibitem{tsplib}
+Reinelt, G. TSPLIB -- A Traveling Salesman Problem Library. \emph{ORSA Journal on Computing}, v.~3, n.~4, p.~376--384, 1991.
+
+\bibitem{christofides}
+Christofides, N. Worst-case analysis of a new heuristic for the travelling salesman problem. Technical Report 388, Carnegie Mellon University, 1976.
+
+\bibitem{sbc}
+Sociedade Brasileira de Computação. Modelo para publicação de artigos. Disponível em: \url{https://www.sbc.org.br/documentos-da-sbc/category/169-templates-para-artigos-e-capitulos-de-livros/}. Acesso em: 24 nov. 2026.
+
+\end{thebibliography}
+
+\end{document}

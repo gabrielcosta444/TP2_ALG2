@@ -1,0 +1,26 @@
+-> Histórico de prompts
+
+- Percebi que tem poucas instancias EUC_2D na faixa de tamanho que o trabalho pede. Será que podemos pegar uma instancia maior e gerar subinstancias dela de forma determinística? mantendo as coordenadas originais e a mesma forma de calcular as distancias
+
+- Pensei em calcular todas as distancias antes e guardar numa matriz simétrica pra não ter que ficar calculando durante a execução dos algoritmos.
+
+fico na dúvida se compensaria mais calcular as distancias conforme fosse precisando, tanto pela questão de memória quanto de tempo e facilidade de implementação. 
+Qual abordagem faria mais sentido nesse caso?
+
+- Quero que você revise o que implementei até agora, principalmente nas estruturas de dados e na implementação da matriz de distancias, MST, twice around, cristofides e branch and bound. 
+Verifique problemas de lógica ou relacionado ao uso da memória.
+
+- Acho que seria bom criarmos testes unitários pra garantir que os algoritmos estão funcionando corretamente. Faça alguns testes principalmente pro arredondamento EUC_2D, validade dos ciclos, MST e os algoritmos de aproximação.
+
+Pro branch and bound podemos usar instancias pequenas pra validar o resultado
+
+- Verifique como estamos coletando as métricas dos experimentos. Estou coletando tempo, memória, etapas do profiling, quantidade de nós expandidos e os diferentes tipos de poda, Ta faltando alguma métrica importante? Veja tbm se estamos coletando tudo da forma correta
+
+- Meu computador tem 4 núcleos físicos, pensei em dividir os experimentos em 4 partes e rodar cada uma em um terminal diferente pra agilizar, faça essa divisão de forma que as execuções sejam independentes e me passa os comandos que preciso rodar em cada terminal
+
+- agora que temos o csv com todos os resultados quero que vc analise os dados, veja principalmente a questão dos timeouts e se tem algum dado faltando.
+
+Depois disso faça um script pra gerar os gráficos de tempo, memória, warm start, qualidade das aproximaçoes e análise de sensibilidade. Coloque testes básicos nesse script tambem
+
+- Quero passar o texto do relatório pro latex e seguindo o modelo SBC. Coloque as tabelas, equações e graficos nas partes correspondentes do texto
+
